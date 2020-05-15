@@ -1,2 +1,2 @@
 # EV-VCU-Control-with-Joystick
-Using CAN Communication 
+VCU Control Using CAN BUS with Joystick
