@@ -12,6 +12,29 @@
 
 #include "lib.h"
 
+void print_usage(char *prg)
+{
+	fprintf(stderr, "%s - send CAN-frames via CAN_RAW sockets.\n", prg);
+	fprintf(stderr, "\nUsage: %s <device> <can_frame>.\n", prg);
+	fprintf(stderr, "\n<can_frame>:\n");
+	fprintf(stderr, " <can_id>#{data}          for 'classic' CAN 2.0 data frames\n");
+	fprintf(stderr, " <can_id>#R{len}          for 'classic' CAN 2.0 data frames\n");
+	fprintf(stderr, " <can_id>##<flags>{data}  for CAN FD frames\n\n");
+	fprintf(stderr, "<can_id>:\n"
+	        " 3 (SFF) or 8 (EFF) hex chars\n");
+	fprintf(stderr, "{data}:\n"
+	        " 0..8 (0..64 CAN FD) ASCII hex-values (optionally separated by '.')\n");
+	fprintf(stderr, "{len}:\n"
+		 " an optional 0..8 value as RTR frames can contain a valid dlc field\n");
+	fprintf(stderr, "<flags>:\n"
+	        " a single ASCII Hex value (0 .. F) which defines canfd_frame.flags\n\n");
+	fprintf(stderr, "Examples:\n");
+	fprintf(stderr, "  5A1#11.2233.44556677.88 / 123#DEADBEEF / 5AA# / 123##1 / 213##311223344 /\n"
+		 "  1F334455#1122334455667788 / 123#R / 00000123#R3\n\n");
+}
+
+
+
 int canSend(char *port, char *data)
 {
 	int s; /* can raw socket */ 
@@ -22,10 +45,17 @@ int canSend(char *port, char *data)
 	struct canfd_frame frame;
 	struct ifreq ifr;
 
+	/* check command line options
+	if (argc != 3) {
+		print_usage(argv[0]);
+		return 1;
+	}
+	*/
 	/* parse CAN frame */
 	required_mtu = parse_canframe(data, &frame);
 	if (!required_mtu){
-		printf("\nWrong CAN-frame format!\n\n");
+		fprintf(stderr, "\nWrong CAN-frame format!\n\n");
+		print_usage("argv[0]");
 		return 1;
 	}
 
@@ -57,7 +87,7 @@ int canSend(char *port, char *data)
 		mtu = ifr.ifr_mtu;
 
 		if (mtu != CANFD_MTU) {
-			printf("CAN interface is not CAN FD capable\n");
+			printf("CAN interface is not CAN FD capable - sorry.\n");
 			return 1;
 		}
 
@@ -73,6 +103,9 @@ int canSend(char *port, char *data)
 	}
 
 	/* disable default receive filter on this RAW socket */
+	/* This is obsolete as we do not read from the socket at all, but for */
+	/* this reason we can remove the receive list in the Kernel to save a */
+	/* little (really a very little!) CPU usage.                          */
 	setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
 
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
@@ -89,62 +122,4 @@ int canSend(char *port, char *data)
 	close(s);
 
 	return 0;
-}
-
-int open_port(const char *port)
-{
-    struct ifreq ifr;
-    struct sockaddr_can addr;
-    soc = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-    if(soc < 0) return -1;
-    addr.can_family = AF_CAN;
-    strcpy (ifr.ifr_name, port);
-    if(ioctl(soc, SIOCGIFINDEX, &ifr) < 0)
-        return -1;
-    addr.can_ifindex = ifr.ifr_ifindex;
-    fcntl(soc, F_SETFL, O_NONBLOCK);
-    if(bind(soc, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-        return -1;
-    return 0;
-}
-
-static int read_can_port = 1;
-char buffer_disp[50] = "";
-
-
-int read_port()
-{
-    struct can_frame frame_rd;
-    int recvbytes = 0;
-    int i;
-    get_canid = 0;
-    get_candlc = 0;
-    if(read_can_port == 0) return -1;
-    struct timeval timeout = {1, 0};
-    fd_set readSet;
-    FD_ZERO(&readSet);
-    FD_SET(soc, &readSet);
-    if(select((soc+1), &readSet, NULL, NULL, &timeout) >=0)
-    {
-        if(FD_ISSET(soc, &readSet))
-        {
-            recvbytes = read(soc, &frame_rd,  sizeof(struct can_frame));
-            if(recvbytes)
-            {
-                get_canid = frame_rd.can_id;
-                get_candlc = frame_rd.can_dlc;
-                memset(get_candata, 0, 20);
-                for(i = 0; i < get_candlc; i++)
-                    get_candata[i] = frame_rd.data[i];
-            }
-        }
-     }
-  }
-  return 0;
-}
-
-int close_port()
-{
-    close(soc);
-    return 0;
 }

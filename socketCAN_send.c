@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
+
 	/* Fill the frame data */
 	frame.can_id  = 0x200;
 	frame.can_dlc = 8;
@@ -80,6 +81,7 @@ int main(int argc, char *argv[])
 	frame.data[6] = 0x00;
 	frame.data[7] = 0x00;
 	/* Send the frame */
+	
 	n = write(s, &frame, sizeof(struct can_frame));
 	if (n < 0) {
 		perror("write");

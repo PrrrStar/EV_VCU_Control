@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <unistd.h>
@@ -10,7 +11,6 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-
 #include <linux/joystick.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -90,6 +90,8 @@ size_t get_axis_state(struct js_event *event, struct axis_state axes[3])
     return axis;
 }
 
+int canSend(char *port, char *data);
+
 int main(int argc, char *argv[]) {
 
         const char *device;
@@ -124,10 +126,13 @@ int main(int argc, char *argv[]) {
 
                                 if (event.number == 0){
                                         printf("Green : A Button");
+                                        canSend("can0","200#80005A0000000000");
                                 }
 
                                 if (event.number == 1){
                                         printf("Red : B Button");
+                                        
+                                        canSend("can0","200#8C005A0000000000");
                                 }
 
                                 if (event.number == 2){
@@ -147,14 +152,8 @@ int main(int argc, char *argv[]) {
                                 }
 
                                 if (event.number == 6){
-                                        if (event.value == true){
-                                                bw_switch = true;
-                                                printf("Backward");
-                                        }else if (event.value 
-                                        printf("Forward",event.value);
-
+                                        printf("forward");
                                 }
-
                                 if (event.number == 7){
                                         printf("Remote ON",event.value);
 
