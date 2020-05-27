@@ -64,27 +64,30 @@ int canSend(char *port, char *data);
 
 int main(int argc, char *argv[]) {
 
-	const char *can_device = "vcan0";
-    	const char *device = "/dev/input/js0";
+
+	//INFO
+	const char *can_device 	= "vcan0";
+    	const char *device 	= "/dev/input/js0";	
+	const char *can_id 	= "200";
 	
-	const char *can_id = "200";
+	
+	//CAN DATA
 	char *data = malloc(sizeof(char)*20);
 	
-	
-    	const char *manual = "80.00.5A.00.00.00.00.00";
 
-	int forward = 0x88;
-	int backward = 0x84;
-	
-	
-    	int direction = 0x5a;
+	int forward 			= 0x88;
+	int backward 		= 0x84;
+    	int direction 		= 0x5a;
+    	int brake 			= 0x84;
 
 
-    	const char *leftLamp = "82";
-    	const char *rightLamp = "81";
-    
-    	const char *brake = "84";
-    	const char *parking = "80";
+	
+    	const char *leftLamp 	= "82";
+    	const char *rightLamp 	= "81";    
+
+
+    	const char *manual		= "80.00.5A.00.00.00.00.00";
+    	const char *parking	= "80.00.5A.00.00.00.00.00";
 
     		
     	int js;
@@ -111,18 +114,18 @@ int main(int argc, char *argv[]) {
 
 				if (event.number == 1){
 					printf("Brake\n");
-					printf(brake);
-
-	            			printf("\n");
-	            			canSend(can_device,brake);
+					sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,brake,direction);
+		        			
+					printf("%s\n",data);
+		        		canSend(can_device,data);
 				}
 
 				if (event.number == 2){					
 					printf("Parking Mode\n");
-					printf(parking);
+					sprintf(data,"%s#%s",can_id,parking);
 
-	            			printf("\n");
-	            			canSend(can_device,parking);
+	            			printf("%s\n",data);
+		        		canSend(can_device,data);
 				}
 
 				if (event.number == 3){
@@ -131,19 +134,19 @@ int main(int argc, char *argv[]) {
 
 				if (event.number == 4){
 					printf("Left Lamp\n");
-	            			printf(leftLamp);
-	            
-	           	 		printf("\n");
-					canSend(can_device,leftLamp);
+					sprintf(data,"%s#%s.00.%x.00.00.00.00.00",can_id,leftLamp,direction);
+		        			
+					printf("%s\n",data);
+		        		canSend(can_device,data);
 
 	       			}
 
 				if (event.number == 5){
 					printf("Rigth Lamp\n");
-					printf(rightLamp);
-
-	            			printf("\n");
-	            			canSend(can_device,rightLamp);
+					sprintf(data,"%s#%s.00.%x.00.00.00.00.00",can_id,rightLamp,direction);
+		        			
+					printf("%s\n",data);
+		        		canSend(can_device,data);
 				}
 
 				printf("\n");
@@ -156,23 +159,26 @@ int main(int argc, char *argv[]) {
 				if (axis < 3){
 		     			if (axis==0&&axes[axis].x == 0&&axes[axis].y == -32767){
 						printf("↑ : Forward\n");
-			        		printf(forward);			
-							
-			        		printf("\n");
-			        		canSend(can_device,data);
+						direction = 0x5A;
+		        		
+			        		sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,forward,direction);
+		        				
+			        		printf("%s\n",data);
+		        			canSend(can_device,data);
 					
 					}
 					if (axis==0&&axes[axis].x == 0&&axes[axis].y == 32767){
 						printf("↓ : backward\n");			
-						printf(backward);
-							
-			        		printf("\n");
-			        		canSend(can_device,data);
+						direction = 0x5A;
+						sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,backward,direction);
+		        				
+			        		printf("%s\n",data);
+		        			canSend(can_device,data);
 					
 					}
 					if (axis==0&&axes[axis].x == -32767&&axes[axis].y == -2){
 						printf("← : Steering Left\n");
-		        			direction -= 0x01;
+		        			direction -= 0x05;
 		        			sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,forward,direction);
 		        			
 						printf("%s\n",data);
@@ -180,8 +186,8 @@ int main(int argc, char *argv[]) {
 
 					}
 					if (axis==0&&axes[axis].x == 32767&&axes[axis].y == -2){
-						printf("← : Steering Left\n");
-		        			direction += 0x01;
+						printf("→ : Steering Right\n");
+		        			direction += 0x05;
 		        			sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,forward,direction);
 		        			
 						printf("%s\n",data);
@@ -191,8 +197,8 @@ int main(int argc, char *argv[]) {
 				}
         		break;
 
-
 			default:
+			break;
 		}
 		
 		
