@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+//#include <windows.h>
 
 #include <unistd.h>
 #include <linux/joystick.h>
@@ -77,9 +78,11 @@ int main(int argc, char *argv[]) {
 
 	int forward 			= 0x88;
 	int backward 		= 0x84;
+	
+	
     	int direction 		= 0x5a;
     	int brake 			= 0x84;
-
+	int speed			= 0x00;
 
 	
     	const char *leftLamp 	= "82";
@@ -156,41 +159,68 @@ int main(int argc, char *argv[]) {
 
 			case JS_EVENT_AXIS:
 				axis = get_axis_state(&event, axes);
+				
 				if (axis < 3){
-		     			if (axis==0&&axes[axis].x == 0&&axes[axis].y == -32767){
-						printf("↑ : Forward\n");
-						direction = 0x5A;
-		        		
+		        		printf("======================================\n");
+		     			if (axis==0&&axes[axis].x == 0&&axes[axis].y < -30000){
+						printf("|↑ | Forward\n");
+		        			//printf("--------------------------\n");
+						
+						speed+=0x05;
+						if (speed >0x4b)  speed =0x4b;
+		        			
+						//direction = 0x5A;
+						
 			        		sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,forward,direction);
-		        				
-			        		printf("%s\n",data);
+		        			
+			        		printf("Data\t: %s\n",data);
+			        		printf("Speed\t: %d\n",speed);
+			        		printf("Angle\t: %d`\n",(direction-90));
 		        			canSend(can_device,data);
 					
 					}
-					if (axis==0&&axes[axis].x == 0&&axes[axis].y == 32767){
-						printf("↓ : backward\n");			
-						direction = 0x5A;
+					if (axis==0&&axes[axis].x == 0&&axes[axis].y > 30000){
+						printf("|↓ | backward\n");
+		        			//printf("--------------------------\n");
+						
+						speed-=0x05;			
+						if (speed <0x00)  speed =0x00;
+		        			
+		        			//direction = 0x5A;
+
 						sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,backward,direction);
 		        				
-			        		printf("%s\n",data);
+			     			printf("Data\t: %s\n",data);
+			        		printf("Speed\t: %d\n",speed);
+			        		printf("Angle\t: %d`\n",(direction-90));
 		        			canSend(can_device,data);
 					
 					}
-					if (axis==0&&axes[axis].x == -32767&&axes[axis].y == -2){
-						printf("← : Steering Left\n");
+					if (axis==0&&axes[axis].x < -30000&&axes[axis].y == -2){
+						printf("|← | Left\n");
+		        			//printf("--------------------------\n");
+			        		
 		        			direction -= 0x05;
+						if (direction <0x32)  direction =0x32;
 		        			sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,forward,direction);
 		        			
-						printf("%s\n",data);
+			        		printf("Data\t: %s\n",data);
+			        		printf("Speed\t: %d\n",speed);
+			        		printf("Angle\t: %d`\n",(direction-90));
 		        			canSend(can_device,data);
 
 					}
-					if (axis==0&&axes[axis].x == 32767&&axes[axis].y == -2){
-						printf("→ : Steering Right\n");
+					if (axis==0&&axes[axis].x > 30000&&axes[axis].y == -2){
+						printf("|→ | Right\n");
+		        			//printf("--------------------------\n");
+		        			
 		        			direction += 0x05;
+						if (direction >0x82)  direction =0x82;
 		        			sprintf(data,"%s#%x.00.%x.00.00.00.00.00",can_id,forward,direction);
 		        			
-						printf("%s\n",data);
+			        		printf("Data\t: %s\n",data);
+			        		printf("Speed\t: %d\n",speed);
+			        		printf("Angle\t: %d`\n",(direction-90));
 		        			canSend(can_device,data);
 		        		}
 		
